@@ -89,8 +89,8 @@ async def generate_content(req: GenerateRequest):
                 system_prompt = "あなたはプロのWebライターです。提供されたリサーチ結果を元に、読者を惹きつける魅力的なブログ記事をMarkdown形式で執筆してください。"
                 prompt = f"テーマ: {req.theme}\n\n{search_context}\n\n【指示】見出し、箇条書き、太字などを効果的に使い、Markdownで出力してください。"
             elif req.step == "fact_check":
-                system_prompt = "あなたは厳格なファクトチェッカーです。記事本文に事実誤認や飛躍がないかをチェックし、修正が必要な箇所をテーブル形式（Markdown）でリストアップしてください。"
-                prompt = f"テーマ: {req.theme}\n\n【検証対象の記事本文】\n{req.article}\n\n【指示】\n修正箇所・理由・修正案を、MarkdownのTableで出力してください。"
+                system_prompt = "あなたは厳格なファクトチェッカー兼プロの編集者です。記事本文に事実誤認や飛躍がないかをチェックし、修正箇所をリストアップした上で、修正を反映したリライト後の記事全文を作成してください。"
+                prompt = f"テーマ: {req.theme}\n\n【検証対象の記事本文】\n{req.article}\n\n【指示】\n1. 修正が必要な箇所・理由・修正案を、MarkdownのTable形式で出力してください。（修正がない場合は「修正なし」と記載してください）\n2. テーブルの下に、「## リライト後の記事本文」という見出しをつけ、上記の修正案を全て反映した完成版の記事全文を出力してください。"
             else:
                 raise ValueError("Invalid step")
                 
