@@ -162,7 +162,7 @@
                 mimeType = 'text/markdown;charset=utf-8;';
             } else if (format === 'html') {
                 mimeType = 'text/html;charset=utf-8;';
-                const htmlBody = marked.parse(cleanContent);
+                const htmlBody = marked.parse(cleanContent, { gfm: true, breaks: true });
                 finalContent = `<!DOCTYPE html>
 <html lang="ja">
 <head>
