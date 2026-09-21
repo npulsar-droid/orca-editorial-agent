@@ -11,16 +11,26 @@ app = FastAPI(title="Orca-Editorial Agent")
 
 templates = Jinja2Templates(directory="app/templates")
 
+# OrcaRouter APIキーの読み込み（Cloud Run環境変数 優先）
+ORCAROUTER_API_KEY = os.getenv("ORCAROUTER_API_KEY", "")
+if not ORCAROUTER_API_KEY:
+    ORCA_KEY_PATH = "/Users/pulsar/Downloads/orcarouter-1.txt"
+    if os.path.exists(ORCA_KEY_PATH):
+        with open(ORCA_KEY_PATH, "r") as f:
+            ORCAROUTER_API_KEY = f.read().strip()
+
 client = OpenAI(
     base_url="https://api.orcarouter.ai/v1",
-    api_key=os.getenv("ORCAROUTER_API_KEY", "dummy_key")
+    api_key=ORCAROUTER_API_KEY
 )
 
-TAVILY_KEY_PATH = "/Users/pulsar/Downloads/tavily.txt"
-TAVILY_API_KEY = ""
-if os.path.exists(TAVILY_KEY_PATH):
-    with open(TAVILY_KEY_PATH, "r") as f:
-        TAVILY_API_KEY = f.read().strip()
+# APIキーの設定
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+if not TAVILY_API_KEY:
+    TAVILY_KEY_PATH = "/Users/pulsar/Downloads/tavily.txt"
+    if os.path.exists(TAVILY_KEY_PATH):
+        with open(TAVILY_KEY_PATH, "r") as f:
+            TAVILY_API_KEY = f.read().strip()
 
 class GenerateRequest(BaseModel):
     theme: str
