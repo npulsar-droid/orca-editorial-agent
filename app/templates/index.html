@@ -13,9 +13,11 @@
         <p class="text-gray-600 mb-8">コストを68%削り、品質を極める「完全自律型AI編集部」</p>
         
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <h2 class="text-xl font-semibold mb-4">記事生成・検証</h2>
+            <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+                <h2 class="text-xl font-semibold whitespace-nowrap">記事生成・検証</h2>
+                <input type="text" id="theme" placeholder="テーマ / プロンプト（例: 2026年の量子コンピュータ市場 ※文字数を指定したり指示を追記できます）" class="flex-1 border p-2 rounded text-base">
+            </div>
             <div class="flex gap-4 mb-4">
-                <input type="text" id="theme" placeholder="テーマ（例: 2026年の量子コンピュータ市場）※新規作成時は必須" class="flex-1 border p-2 rounded">
                 <select id="step" class="border p-2 rounded bg-white" onchange="updateDefaultModel()">
                     <option value="research" selected>1. リサーチ</option>
                     <option value="writing">2. 構成・執筆</option>
