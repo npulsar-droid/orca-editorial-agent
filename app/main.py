@@ -59,7 +59,7 @@ async def generate_step(req: GenerateRequest):
     model_map = {
         "research": "orcarouter/free",
         "writing": "orcarouter/auto",
-        "fact_check": "orcarouter/free" # 重いモデルでフリーズするのを防ぐため軽量モデルに変更
+        "fact_check": "orcarouter/auto"
     }
     model_name = model_map.get(req.step, "orcarouter/auto")
 

@@ -15,11 +15,11 @@
         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
             <h2 class="text-xl font-semibold mb-4">記事生成・検証</h2>
             <div class="flex gap-4 mb-4">
-                <input type="text" id="theme" placeholder="テーマ（例: 2026年の量子コンピュータ市場）" class="flex-1 border p-2 rounded">
+                <input type="text" id="theme" placeholder="テーマ（例: 2026年の量子コンピュータ市場）※新規作成時は必須" class="flex-1 border p-2 rounded">
                 <select id="step" class="border p-2 rounded bg-white">
                     <option value="research">リサーチ (orcarouter/free)</option>
                     <option value="writing" selected>構成・執筆 (orcarouter/auto)</option>
-                    <option value="fact_check">ファクトチェック (orcarouter/free)</option>
+                    <option value="fact_check">ファクトチェック (orcarouter/auto)</option>
                 </select>
                 <button onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
             </div>
@@ -74,6 +74,9 @@
     </div>
 
     <script>
+        let lastSuccessfulTheme = "";
+        let lastSuccessfulStep = "";
+
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -91,7 +94,6 @@
                 return alert('保存する結果がありません。');
             }
             
-            // 不要なプレフィックスを取り除く
             let cleanContent = content;
             const marker = "---";
             if (content.includes(marker)) {
@@ -110,7 +112,6 @@
                 mimeType = 'text/markdown;charset=utf-8;';
             } else if (format === 'html') {
                 mimeType = 'text/html;charset=utf-8;';
-                // MarkdownをHTMLに変換し、スタイル付きのHTMLテンプレートに埋め込む
                 const htmlBody = marked.parse(cleanContent);
                 finalContent = `<!DOCTYPE html>
 <html lang="ja">
@@ -148,14 +149,34 @@ ${htmlBody}
         }
 
         async function generate() {
-            const theme = document.getElementById('theme').value;
+            let theme = document.getElementById('theme').value;
             const step = document.getElementById('step').value;
             const outputEl = document.getElementById('output');
             const customContext = document.getElementById('custom-context').value;
             
-            if(!theme) return alert('テーマを入力してください');
-            
             let articleText = customContext;
+            
+            if (!theme) {
+                if (step === 'research' || (step === 'writing' && !articleText.trim())) {
+                    return alert('新規で検索・作成を行う場合は、テーマを入力してください。');
+                } else {
+                    theme = "指定なし（記事本文・テキストに基づく）";
+                }
+            }
+            
+            // 直前のステップがリサーチで、同じテーマのまま執筆に進む場合、自動でリサーチ結果を引き継ぐ
+            if (step === 'writing' && lastSuccessfulStep === 'research' && theme === lastSuccessfulTheme) {
+                if (!articleText.trim()) {
+                    let prevOutput = outputEl.textContent;
+                    const marker = "---";
+                    if (prevOutput.includes(marker)) {
+                        prevOutput = prevOutput.substring(prevOutput.indexOf(marker) + marker.length).trim();
+                    }
+                    if (prevOutput && !prevOutput.includes('スタンバイ...')) {
+                        articleText = prevOutput;
+                    }
+                }
+            }
             
             if (step === 'fact_check') {
                 if (!articleText.trim()) {
@@ -215,6 +236,9 @@ ${htmlBody}
                             document.getElementById('model-name').textContent = data.actual_model;
                             document.getElementById('tokens').textContent = data.tokens + ' (概算)';
                             document.getElementById('cost').textContent = `¥${data.cost_estimate_jpy}`;
+                            // 成功時に状態を保存（次のステップへの自動引き継ぎ用）
+                            lastSuccessfulTheme = theme;
+                            lastSuccessfulStep = step;
                         } else if (data.type === 'error') {
                             statusEl.textContent = 'エラー発生';
                             outputEl.textContent += '\n\nエラー: ' + data.message;
