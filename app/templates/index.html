@@ -21,9 +21,12 @@
                     <option value="writing" selected>2. 構成・執筆</option>
                     <option value="fact_check">3. ファクトチェック</option>
                 </select>
-                <select id="model" class="border p-2 rounded bg-white">
-                    <option value="orcarouter/auto" selected>自動 (高精度・推論モデル)</option>
-                    <option value="orcarouter/free">高速 (GPT-4o-mini等)</option>
+                <select id="model" class="border p-2 rounded bg-white text-sm">
+                    <option value="orcarouter/auto" selected>自動ガチャ (高精度・推論)</option>
+                    <option value="orcarouter/free">無料ガチャ (高速・不安定)</option>
+                    <option value="deepseek/deepseek-r1">DeepSeek-R1 (最強推論・激重)</option>
+                    <option value="openai/gpt-4o-mini">GPT-4o-mini (高速・安定)</option>
+                    <option value="openai/gpt-4o">GPT-4o (超高精度)</option>
                 </select>
                 <button id="exec-btn" onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
                 <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">停止</button>
