@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.git/
+.gitignore
+test.js
+rewrite_en.py
+rewrite_ui.py
+rewrite_ui2.py
