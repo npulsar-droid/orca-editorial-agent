@@ -16,17 +16,16 @@
             <h2 class="text-xl font-semibold mb-4">記事生成・検証</h2>
             <div class="flex gap-4 mb-4">
                 <input type="text" id="theme" placeholder="テーマ（例: 2026年の量子コンピュータ市場）※新規作成時は必須" class="flex-1 border p-2 rounded">
-                <select id="step" class="border p-2 rounded bg-white">
+                <select id="step" class="border p-2 rounded bg-white" onchange="updateDefaultModel()">
                     <option value="research">1. リサーチ</option>
                     <option value="writing" selected>2. 構成・執筆</option>
                     <option value="fact_check">3. ファクトチェック</option>
                 </select>
                 <select id="model" class="border p-2 rounded bg-white text-sm">
-                    <option value="orcarouter/auto" selected>自動ガチャ (高精度・推論)</option>
-                    <option value="orcarouter/free">無料ガチャ (高速・不安定)</option>
-                    <option value="deepseek/deepseek-r1">DeepSeek-R1 (最強推論・激重)</option>
+                    <option value="openai/gpt-4o" selected>GPT-4o (超高精度・超安定)</option>
                     <option value="openai/gpt-4o-mini">GPT-4o-mini (高速・安定)</option>
-                    <option value="openai/gpt-4o">GPT-4o (超高精度)</option>
+                    <option value="deepseek/deepseek-r1">DeepSeek-R1 (最強推論・激重)</option>
+                    <option value="orcarouter/auto">自動ガチャ (非推奨・不安定)</option>
                 </select>
                 <button id="exec-btn" onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
                 <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">停止</button>
@@ -85,6 +84,16 @@
         let lastSuccessfulTheme = "";
         let lastSuccessfulStep = "";
         let abortController = null;
+
+        function updateDefaultModel() {
+            const step = document.getElementById('step').value;
+            const modelSelect = document.getElementById('model');
+            if (step === 'research') {
+                modelSelect.value = 'openai/gpt-4o-mini';
+            } else {
+                modelSelect.value = 'openai/gpt-4o';
+            }
+        }
 
         function cancelGeneration() {
             if (abortController) {
