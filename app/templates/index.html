@@ -139,63 +139,44 @@
         }
 
         function downloadFile() {
-            const content = document.getElementById('output').textContent;
-            if (!content || content.includes('スタンバイ...')) {
+            const format = document.getElementById('download-format').value;
+            const outputEl = document.getElementById('output');
+            let text = outputEl.textContent;
+
+            if (!text || text.includes('スタンバイ...')) {
                 return alert('保存する結果がありません。');
             }
+
+            let blob;
+            let filename = 'result';
             
-            let cleanContent = content;
-            const marker = "---";
-            if (content.includes(marker)) {
-                cleanContent = content.substring(content.indexOf(marker) + marker.length).trim();
-            }
-
-            const theme = document.getElementById('theme').value || 'article';
-            const step = document.getElementById('step').value;
-            const format = document.getElementById('download-format').value;
-            const filename = `${theme}_${step}.${format}`;
-
-            let finalContent = cleanContent;
-            let mimeType = 'text/plain;charset=utf-8;';
-
             if (format === 'md') {
-                mimeType = 'text/markdown;charset=utf-8;';
+                blob = new Blob([text], { type: 'text/markdown' });
+                filename += '.md';
+            } else if (format === 'txt') {
+                blob = new Blob([text], { type: 'text/plain' });
+                filename += '.txt';
             } else if (format === 'html') {
-                mimeType = 'text/html;charset=utf-8;';
-                const htmlBody = marked.parse(cleanContent, { gfm: true, breaks: true });
-                finalContent = `<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${theme}</title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #333; }
-  h1, h2, h3 { color: #111; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
-  pre, code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
-  pre { padding: 1rem; overflow-x: auto; }
-  pre code { background: transparent; padding: 0; }
-  table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
-  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-  th { background-color: #f8f9fa; }
-  blockquote { border-left: 4px solid #ddd; margin: 0; padding-left: 1rem; color: #666; }
-</style>
-</head>
-<body>
-${htmlBody}
-</body>
-</html>`;
+                const htmlContent = marked.parse(text, { gfm: true, breaks: true });
+                const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>出力結果</title><style>
+                    body { font-family: sans-serif; line-height: 1.6; padding: 2rem; max-width: 900px; margin: auto; }
+                    h1, h2, h3 { border-bottom: 1px solid #ccc; padding-bottom: 0.5rem; margin-top: 2rem; }
+                    table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; font-size: 0.95rem; }
+                    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                    th { background-color: #f8f9fa; font-weight: bold; }
+                    code { background: #f4f4f4; padding: 2px 5px; border-radius: 4px; }
+                    pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; }
+                </style></head><body>${htmlContent}</body></html>`;
+                blob = new Blob([fullHtml], { type: 'text/html' });
+                filename += '.html';
             }
-
-            const blob = new Blob([finalContent], { type: mimeType });
-            const link = document.createElement("a");
+            
             const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         async function generate() {

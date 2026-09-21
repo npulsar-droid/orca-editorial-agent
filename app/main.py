@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 import urllib.request
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
@@ -70,7 +71,7 @@ async def generate_content(req: GenerateRequest):
     async def generate_stream():
         try:
             search_context = ""
-            if req.step in ["research", "writing"]:
+            if req.step in ["research", "writing", "fact_check"]:
                 if req.article.strip():
                     yield json.dumps({"type": "status", "message": "📄 事前知識（ファイル）を読み込んでいます...", "progress": 40}) + "\n"
                     search_context = f"【提供された事前リサーチ結果・コンテキスト】\n{req.article}\n\n"
@@ -82,15 +83,17 @@ async def generate_content(req: GenerateRequest):
                         search_context += f"- タイトル: {r.get('title')}\n  内容: {r.get('body')}\n\n"
                     yield json.dumps({"type": "status", "message": "✅ リサーチ完了。最新情報を取得しました。", "progress": 40}) + "\n"
 
+            date_context = f"\n現在の日時: {get_current_date_str()}"
+
             if req.step == "research":
-                system_prompt = "あなたは優秀なリサーチャーです。提供されたWeb検索結果を元に、テーマに関する最新情報をわかりやすく要約してレポートを作成してください。"
-                prompt = f"テーマ: {req.theme}\n\n{search_context}"
+                system_prompt = f"あなたは優秀なリサーチャーです。提供された検索結果を元に、テーマに関する詳細なリサーチレポートを作成してください。{date_context}"
+                prompt = f"テーマ: {req.theme}\n\n{search_context}\n\n【指示】見出しを使い、Markdown形式で分かりやすく整理してください。"
             elif req.step == "writing":
-                system_prompt = "あなたはプロのWebライターです。提供されたリサーチ結果を元に、読者を惹きつける魅力的なブログ記事をMarkdown形式で執筆してください。"
+                system_prompt = f"あなたはプロのWebライターです。提供されたリサーチ結果を元に、読者を惹きつける魅力的なブログ記事をMarkdown形式で執筆してください。{date_context}"
                 prompt = f"テーマ: {req.theme}\n\n{search_context}\n\n【指示】見出し、箇条書き、太字などを効果的に使い、Markdownで出力してください。"
             elif req.step == "fact_check":
-                system_prompt = "あなたは厳格なファクトチェッカー兼プロの編集者です。記事本文に事実誤認や飛躍がないかをチェックし、修正箇所をリストアップした上で、修正を反映したリライト後の記事全文を作成してください。"
-                prompt = f"テーマ: {req.theme}\n\n【検証対象の記事本文】\n{req.article}\n\n【指示】\n1. 修正が必要な箇所・理由・修正案を、以下の箇条書きフォーマットで出力してください。（表は使わないでください）\n\n【修正箇所1】\n- **該当箇所**: (本文中の該当テキスト)\n- **理由**: (事実誤認や飛躍の理由)\n- **修正案**: (具体的な修正案)\n\n※修正がない場合は「修正なし」と記載してください。\n2. 指摘リストの下に、「## リライト後の記事本文」という見出しをつけ、上記の修正案を全て反映した完成版の記事全文を出力してください。"
+                system_prompt = f"あなたは厳格なファクトチェッカー兼プロの編集者です。記事本文に事実誤認や飛躍がないかをチェックし、修正箇所をリストアップした上で、修正を反映したリライト後の記事全文を作成してください。{date_context}"
+                prompt = f"テーマ: {req.theme}\n\n【最新のWebリサーチ結果】\n{search_context}\n\n【検証対象の記事本文】\n{req.article}\n\n【指示】\n1. 修正が必要な箇所・理由・修正案を、以下の箇条書きフォーマットで出力してください。（表は使わないでください）\n\n【修正箇所1】\n- **該当箇所**: (本文中の該当テキスト)\n- **理由**: (事実誤認や飛躍の理由)\n- **修正案**: (具体的な修正案)\n\n※修正がない場合は「修正なし」と記載してください。\n2. 指摘リストの下に、「## リライト後の記事本文」という見出しをつけ、上記の修正案を全て反映した完成版の記事全文を出力してください。"
             else:
                 raise ValueError("Invalid step")
                 
