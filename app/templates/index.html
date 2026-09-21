@@ -19,53 +19,53 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-    <div class="max-w-4xl mx-auto py-10 px-4">
-        <h1 class="text-3xl font-bold mb-2">Orca-Editorial Agent</h1>
-        <p class="text-gray-600 mb-8">コストを68%削り、品質を極める「完全自律型AI編集部」</p>
+<body class="bg-slate-50 text-slate-800 font-sans">
+    <div class="max-w-5xl mx-auto py-12 px-6">
+        <div class="text-center mb-12"><h1 class="text-4xl font-extrabold mb-3 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Orca-Editorial Agent</h1>
+        <p class="text-slate-500 font-medium text-lg">コストを68%削り、品質を極める「完全自律型AI編集部」</p></div>
         
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 mb-8">
             <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <h2 class="text-xl font-semibold whitespace-nowrap">記事生成・検証</h2>
-                <input type="text" id="theme" placeholder="テーマ / プロンプト（例: 2026年の量子コンピューティング市場 ※文字数や指示も追記可）" class="flex-1 border p-2 rounded text-sm">
+                <h2 class="text-xl font-bold text-slate-700 whitespace-nowrap">記事生成・検証</h2>
+                <input type="text" id="theme" placeholder="テーマ / プロンプト（例: 2026年の量子コンピューティング市場 ※文字数や指示も追記可）" class="flex-1 border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 p-3 rounded-xl text-sm transition-all outline-none">
             </div>
             <div class="flex gap-4 mb-4">
-                <select id="step" class="border p-2 rounded bg-white" onchange="updateDefaultModel()">
+                <select id="step" class="border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 p-3 rounded-xl bg-white transition-all outline-none cursor-pointer" onchange="updateDefaultModel()">
                     <option value="research" selected>1. リサーチ</option>
                     <option value="writing">2. 構成・執筆</option>
                     <option value="fact_check">3. ファクトチェック</option>
                 </select>
-                <select id="model" class="border p-2 rounded bg-white text-sm">
+                <select id="model" class="border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 p-3 rounded-xl bg-white text-sm transition-all outline-none cursor-pointer">
                     <!-- JavaScriptで動的に生成されます -->
                 </select>
-                <button id="exec-btn" onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
-                <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">停止</button>
+                <button id="exec-btn" onclick="generate()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5">実行</button>
+                <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-8 py-3 rounded-xl font-semibold shadow-md transition-all duration-200">停止</button>
             </div>
             
             <div class="mt-4">
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-sm font-semibold text-gray-700">事前リサーチ結果 / 検証する記事本文（空欄の場合は自動取得します）</label>
-                    <label class="cursor-pointer bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200 border">
+                    <label class="cursor-pointer bg-slate-100 text-slate-700 px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-200 hover:shadow-sm text-sm font-medium transition-all">
                         📄 ファイルを読み込む (MD/TXT/HTML)
                         <input type="file" id="file-upload" accept=".md,.txt,.html" class="hidden" onchange="handleFileUpload(event)">
                     </label>
                 </div>
-                <textarea id="custom-context" rows="4" placeholder="ここに独自の調査メモや、外部で作成した記事を貼り付けると、AIがそれを元に執筆や検証を行います。" class="w-full border p-2 rounded text-sm"></textarea>
+                <textarea id="custom-context" rows="4" placeholder="ここに独自の調査メモや、外部で作成した記事を貼り付けると、AIがそれを元に執筆や検証を行います。" class="w-full border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 rounded-xl p-4 h-32 text-sm transition-all outline-none resize-y"></textarea>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex-1 md:col-span-2 flex flex-col">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 flex-1 flex flex-col h-[40rem]">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-semibold">Agent 実行ログ & 結果</h3>
+                <h3 class="text-xl font-bold text-slate-700 flex items-center gap-2"><span>🤖</span> Agent 実行ログ & 結果</h3>
                 <div class="flex items-center gap-2">
-                    <button onclick="copyToEditor()" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-sm hover:bg-indigo-200 font-semibold">📝 上部エディタに反映して編集</button>
-                    <select id="download-format" class="border rounded px-2 py-1 text-sm bg-white">
+                    <button onclick="copyToEditor()" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 flex items-center gap-1 transition-colors">📝 上部エディタに反映して編集</button>
+                    <select id="download-format" class="border-2 border-slate-200 p-2 rounded-lg text-sm bg-white focus:border-indigo-500 outline-none transition-colors">
                         <option value="md">Markdown (.md)</option>
                         <option value="txt">Text (.txt)</option>
                         <option value="html">HTML (.html)</option>
                     </select>
-                    <button onclick="downloadFile()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"><span class="text-lg">💾</span> 保存</button>
+                    <button onclick="downloadFile()" class="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-emerald-600 hover:to-green-700 flex items-center gap-1 shadow-sm transition-all transform hover:-translate-y-0.5"><span class="text-lg">💾</span> 保存</button>
                 </div>
             </div>
                 
@@ -79,9 +79,19 @@
                     </div>
                 </div>
 
-                <div id="output" class="bg-gray-900 text-green-400 p-4 rounded flex-1 min-h-[16rem] overflow-y-auto whitespace-pre-wrap font-mono text-sm leading-relaxed">スタンバイ...</div>
+                
+                <div class="relative flex-1 flex flex-col rounded-xl overflow-hidden shadow-inner border border-slate-800">
+                    <div class="bg-slate-800 px-4 py-2 flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        <div class="text-[10px] text-slate-400 font-mono ml-2 uppercase tracking-widest">agent-terminal</div>
+                    </div>
+                    <div id="output" class="bg-slate-900 text-emerald-400 p-5 flex-1 min-h-[16rem] overflow-y-auto whitespace-pre-wrap font-mono text-sm leading-relaxed shadow-inner">スタンバイ...</div>
+                </div>
+
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 w-full lg:w-72 flex-shrink-0">
                 <h3 class="font-semibold mb-2">メタデータ & コスト</h3>
                 <div class="text-sm">
                     <p class="mb-2"><strong>使用モデル:</strong> <span id="model-name" class="text-gray-500">-</span></p>
