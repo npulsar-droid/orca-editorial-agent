@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orca-Editorial Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <h1 class="text-3xl font-bold mb-2">Orca-Editorial Agent</h1>
+        <p class="text-gray-600 mb-8">コストを68%削り、品質を極める「完全自律型AI編集部」</p>
+        
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <h2 class="text-xl font-semibold mb-4">記事生成・検証</h2>
+            <div class="flex gap-4 mb-4">
+                <input type="text" id="theme" placeholder="テーマ（例: 2026年の量子コンピュータ市場）" class="flex-1 border p-2 rounded">
+                <select id="step" class="border p-2 rounded bg-white">
+                    <option value="research">リサーチ (orcarouter/free)</option>
+                    <option value="writing" selected>構成・執筆 (orcarouter/auto)</option>
+                    <option value="fact_check">ファクトチェック (orcarouter/free)</option>
+                </select>
+                <button onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
+            </div>
+            
+            <div class="mt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-sm font-semibold text-gray-700">事前リサーチ結果 / 検証する記事本文（空欄の場合は自動取得します）</label>
+                    <label class="cursor-pointer bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200 border">
+                        📄 MDファイルを読み込む
+                        <input type="file" id="file-upload" accept=".md,.txt" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                </div>
+                <textarea id="custom-context" rows="4" placeholder="ここに独自の調査メモや、外部で作成した記事を貼り付けると、AIがそれを元に執筆や検証を行います。" class="w-full border p-2 rounded text-sm"></textarea>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-semibold">Agent 実行ログ & 結果</h3>
+                    <button onclick="downloadMD()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">💾 MDとして保存</button>
+                </div>
+                
+                <!-- プログレスバーとステータス表示 -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span id="agent-status" class="font-semibold text-blue-600">待機中</span>
+                        <span id="progress-text" class="text-gray-500">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="output" class="bg-gray-900 text-green-400 p-4 rounded flex-1 min-h-[16rem] overflow-y-auto whitespace-pre-wrap font-mono text-sm leading-relaxed">スタンバイ...</div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="font-semibold mb-2">メタデータ & コスト</h3>
+                <div class="text-sm">
+                    <p class="mb-2"><strong>使用モデル:</strong> <span id="model-name" class="text-gray-500">-</span></p>
+                    <p class="mb-2"><strong>消費トークン:</strong> <span id="tokens" class="text-gray-500">-</span></p>
+                    <p class="text-lg font-bold mt-4 text-blue-600">推定コスト: <span id="cost">¥0.00</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('custom-context').value = e.target.result;
+            };
+            reader.readAsText(file);
+            // 同じファイルを再度選べるようにリセット
+            event.target.value = '';
+        }
+
+        function downloadMD() {
+            const content = document.getElementById('output').textContent;
+            if (!content || content.includes('スタンバイ...')) {
+                return alert('保存する結果がありません。');
+            }
+            
+            // 不要なプレフィックスを取り除く（例：🤖 執筆エージェントが... 等のシステムメッセージ）
+            let cleanContent = content;
+            const marker = "---";
+            if (content.includes(marker)) {
+                cleanContent = content.substring(content.indexOf(marker) + marker.length).trim();
+            }
+
+            const theme = document.getElementById('theme').value || 'article';
+            const step = document.getElementById('step').value;
+            const filename = `${theme}_${step}.md`;
+
+            const blob = new Blob([cleanContent], { type: 'text/markdown;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function generate() {
+            const theme = document.getElementById('theme').value;
+            const step = document.getElementById('step').value;
+            const outputEl = document.getElementById('output');
+            const customContext = document.getElementById('custom-context').value;
+            
+            if(!theme) return alert('テーマを入力してください');
+            
+            let articleText = customContext;
+            
+            if (step === 'fact_check') {
+                // テキストエリアが空なら、出力結果(outputEl)から引き継ぐ
+                if (!articleText.trim()) {
+                    let prevOutput = outputEl.textContent;
+                    const marker = "---";
+                    if (prevOutput.includes(marker)) {
+                        prevOutput = prevOutput.substring(prevOutput.indexOf(marker) + marker.length).trim();
+                    }
+                    articleText = prevOutput;
+                }
+                
+                if (!articleText || articleText.includes('スタンバイ...')) {
+                    return alert('検証する記事をテキストエリアに入力するか、MDファイルで読み込んでください。（または先に「構成・執筆」を実行してください）');
+                }
+            }
+            
+            const statusEl = document.getElementById('agent-status');
+            const progressTextEl = document.getElementById('progress-text');
+            const progressBarEl = document.getElementById('progress-bar');
+            
+            statusEl.textContent = '初期化中...';
+            progressBarEl.style.width = '10%';
+            progressTextEl.textContent = '10%';
+            outputEl.textContent = '';
+            
+            try {
+                const res = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({theme: theme, step: step, article: articleText})
+                });
+                
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let buffer = "";
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop(); // 最後の不完全な行を保持
+                    
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        const data = JSON.parse(line);
+                        
+                        if (data.type === 'status') {
+                            statusEl.textContent = data.message;
+                            progressBarEl.style.width = data.progress + '%';
+                            progressTextEl.textContent = data.progress + '%';
+                        } else if (data.type === 'chunk') {
+                            outputEl.textContent += data.content;
+                            outputEl.scrollTop = outputEl.scrollHeight; // 自動スクロール
+                        } else if (data.type === 'done') {
+                            document.getElementById('model-name').textContent = data.actual_model;
+                            document.getElementById('tokens').textContent = data.tokens + ' (概算)';
+                            document.getElementById('cost').textContent = `¥${data.cost_estimate_jpy}`;
+                        } else if (data.type === 'error') {
+                            statusEl.textContent = 'エラー発生';
+                            outputEl.textContent += '\n\nエラー: ' + data.message;
+                        }
+                    }
+                }
+            } catch (err) {
+                statusEl.textContent = '通信エラー';
+                outputEl.textContent = '通信エラーが発生しました: ' + err;
+            }
+        }
+    </script>
+</body>
+</html>
