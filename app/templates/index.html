@@ -59,7 +59,7 @@
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-slate-700 flex items-center gap-2 whitespace-nowrap"><span>🤖</span> Agent Console</h3>
                 <div class="flex items-center gap-2">
-                    <button onclick="copyToEditor()" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 flex items-center gap-1 transition-colors">📝 上部エディタに反映して編集</button>
+                    <button onclick="copyToEditor()" class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-100 flex items-center gap-1 transition-colors">📝 エディタへ反映</button>
                     <select id="download-format" class="border-2 border-slate-200 p-2 rounded-lg text-sm bg-white focus:border-indigo-500 outline-none transition-colors">
                         <option value="md">Markdown (.md)</option>
                         <option value="txt">Text (.txt)</option>
@@ -71,7 +71,7 @@
                 
                 <div class="mb-4">
                     <div class="flex justify-between text-sm mb-1">
-                        <span id="agent-status" class="font-semibold text-blue-600">待機中</span>
+                        <span id="agent-status" class="font-semibold text-blue-600">Standby</span>
                         <span id="progress-text" class="text-gray-500">0%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5">
@@ -87,7 +87,7 @@
                         <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
                         <div class="text-[10px] text-slate-400 font-mono ml-2 uppercase tracking-widest">agent-terminal</div>
                     </div>
-                    <div id="output" class="bg-slate-900 text-emerald-400 p-5 flex-1 min-h-[16rem] overflow-y-auto whitespace-pre-wrap font-mono text-sm leading-relaxed shadow-inner">スタンバイ...</div>
+                    <div id="output" class="bg-slate-900 text-emerald-400 p-5 flex-1 min-h-[16rem] overflow-y-auto whitespace-pre-wrap font-mono text-sm leading-relaxed shadow-inner">Standby...</div>
                 </div>
 
             </div>
@@ -172,7 +172,7 @@
                 text = text.substring(text.indexOf(marker) + marker.length).trim();
             }
             
-            if (text && !text.includes('スタンバイ...')) {
+            if (text && !text.includes('Standby...')) {
                 customContext.value = text;
                 alert('上部のテキストエリアに結果を反映しました。内容を編集してから次のステップを実行してください。');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -204,7 +204,7 @@
             const outputEl = document.getElementById('output');
             let text = outputEl.textContent;
 
-            if (!text || text.includes('スタンバイ...')) {
+            if (!text || text.includes('Standby...')) {
                 return alert('保存する結果がありません。');
             }
 
@@ -265,7 +265,7 @@
                     if (prevOutput.includes(marker)) {
                         prevOutput = prevOutput.substring(prevOutput.indexOf(marker) + marker.length).trim();
                     }
-                    if (prevOutput && !prevOutput.includes('スタンバイ...')) {
+                    if (prevOutput && !prevOutput.includes('Standby...')) {
                         articleText = prevOutput;
                     }
                 }
@@ -281,7 +281,7 @@
                     articleText = prevOutput;
                 }
                 
-                if (!articleText || articleText.includes('スタンバイ...')) {
+                if (!articleText || articleText.includes('Standby...')) {
                     return alert('検証する記事をテキストエリアに入力するか、ファイルで読み込んでください。（または先に「構成・執筆」を実行してください）');
                 }
             }
@@ -290,7 +290,7 @@
             const progressTextEl = document.getElementById('progress-text');
             const progressBarEl = document.getElementById('progress-bar');
             
-            statusEl.textContent = '初期化中...';
+            statusEl.textContent = 'Initializing...';
             progressBarEl.style.width = '10%';
             progressTextEl.textContent = '10%';
             outputEl.innerHTML = '<span class="text-gray-400">Working<span class="loading-dots"></span></span>';
@@ -362,24 +362,24 @@
                         document.getElementById('model-name').textContent = data.actual_model;
                         document.getElementById('tokens').textContent = data.tokens + ' (概算)';
                         document.getElementById('cost').textContent = `¥${data.cost_estimate_jpy}`;
-                        statusEl.textContent = '完了';
+                        statusEl.textContent = 'Complete';
                         progressBarEl.style.width = '100%';
                         progressTextEl.textContent = '100%';
                         lastSuccessfulTheme = theme;
                         lastSuccessfulStep = step;
                     } else if (data.type === 'error') {
-                        statusEl.textContent = 'エラー発生';
+                        statusEl.textContent = 'Error';
                         outputEl.textContent += '\n\nエラー: ' + data.message;
                     }
                 }
             } catch (err) {
                 if (err.name === 'AbortError') {
-                    statusEl.textContent = 'キャンセルされました';
-                    outputEl.textContent += '\n\n⚠️ ユーザーによって処理がキャンセルされました。';
+                    statusEl.textContent = 'Aborted';
+                    outputEl.textContent += '\n\n⚠️ ユーザーによって処理がAborted。';
                     progressBarEl.style.width = '0%';
                 } else {
-                    statusEl.textContent = '通信エラー';
-                    outputEl.textContent = '通信エラーが発生しました: ' + err;
+                    statusEl.textContent = 'Connection Error';
+                    outputEl.textContent = 'Connection Errorが発生しました: ' + err;
                 }
             } finally {
                 document.getElementById('exec-btn').classList.remove('hidden');

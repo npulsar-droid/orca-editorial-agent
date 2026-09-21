@@ -76,15 +76,15 @@ async def generate_content(req: GenerateRequest):
             search_context = ""
             if req.step in ["research", "writing", "fact_check"]:
                 if req.article.strip():
-                    yield json.dumps({"type": "status", "message": "📄 事前知識（ファイル）を読み込んでいます...", "progress": 40}) + "\n"
+                    yield json.dumps({"type": "status", "message": "[*] Reading context...", "progress": 40}) + "\n"
                     search_context = f"【提供された事前リサーチ結果・コンテキスト】\n{req.article}\n\n"
                 else:
-                    yield json.dumps({"type": "status", "message": "🔍 リサーチエージェント起動（Tavily検索中...）", "progress": 20}) + "\n"
+                    yield json.dumps({"type": "status", "message": "[*] Searching the web for latest context...", "progress": 20}) + "\n"
                     search_results = perform_web_search(req.theme)
                     search_context = "【Webリサーチ結果（最新情報）】\n"
                     for r in search_results:
                         search_context += f"- タイトル: {r.get('title')}\n  内容: {r.get('body')}\n\n"
-                    yield json.dumps({"type": "status", "message": "✅ リサーチ完了。最新情報を取得しました。", "progress": 40}) + "\n"
+                    yield json.dumps({"type": "status", "message": "[+] Context acquired.", "progress": 40}) + "\n"
 
             date_context = f"\n現在の日時: {get_current_date_str()}"
 
@@ -102,7 +102,7 @@ async def generate_content(req: GenerateRequest):
                 
             model_name = req.model
 
-            yield json.dumps({"type": "status", "message": "🤖 エージェントがテキストをストリーミング生成中...", "progress": 70}) + "\n"
+            yield json.dumps({"type": "status", "message": "[*] Agent is streaming text...", "progress": 50}) + "\n"
             
             response = client.chat.completions.create(
                 model=model_name,
