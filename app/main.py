@@ -33,6 +33,9 @@ if not TAVILY_API_KEY:
         with open(TAVILY_KEY_PATH, "r") as f:
             TAVILY_API_KEY = f.read().strip()
 
+def get_current_date_str():
+    return datetime.datetime.now().strftime("%Y年%m月%d日")
+
 class GenerateRequest(BaseModel):
     theme: str
     step: str
