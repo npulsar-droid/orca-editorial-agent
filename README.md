@@ -1,6 +1,6 @@
 # Orca-Editorial Agent ✍️
 
-![UIイメージ](https://storage.googleapis.com/zenn-user-upload/ui-image-placeholder)
+![UIイメージ](https://github.com/user-attachments/assets/7dab2322-a740-4c19-bbb6-a9f977669d72)
 
 **Orca-Editorial Agent** は、AIと人間が協業（Human-in-the-loop）して、高品質な記事を作成するための業務自動化エージェントです。
 リサーチ、執筆、ファクトチェック・校正の3つのステップに分割し、工程ごとに最適なLLM（OrcaRouter経由）を自動で切り替えることで、**コストを劇的に抑えながらプロ品質のテキスト**を生み出します。
