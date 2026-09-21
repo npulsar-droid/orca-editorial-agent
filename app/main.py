@@ -103,7 +103,7 @@ async def generate_step(req: GenerateRequest):
                     {"role": "user", "content": prompt}
                 ],
                 stream=True,
-                timeout=120.0  # 2分応答がなければタイムアウト
+                timeout=300.0  # 推論モデル（o1やR1）の思考時間を考慮して5分に変更
             )
             
             actual_model = model_name
