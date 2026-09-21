@@ -17,9 +17,13 @@
             <div class="flex gap-4 mb-4">
                 <input type="text" id="theme" placeholder="テーマ（例: 2026年の量子コンピュータ市場）※新規作成時は必須" class="flex-1 border p-2 rounded">
                 <select id="step" class="border p-2 rounded bg-white">
-                    <option value="research">リサーチ (orcarouter/free)</option>
-                    <option value="writing" selected>構成・執筆 (orcarouter/auto)</option>
-                    <option value="fact_check">ファクトチェック (orcarouter/auto)</option>
+                    <option value="research">1. リサーチ</option>
+                    <option value="writing" selected>2. 構成・執筆</option>
+                    <option value="fact_check">3. ファクトチェック</option>
+                </select>
+                <select id="model" class="border p-2 rounded bg-white">
+                    <option value="orcarouter/auto" selected>自動 (高精度・推論モデル)</option>
+                    <option value="orcarouter/free">高速 (GPT-4o-mini等)</option>
                 </select>
                 <button id="exec-btn" onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
                 <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">停止</button>
@@ -160,6 +164,7 @@ ${htmlBody}
         async function generate() {
             let theme = document.getElementById('theme').value;
             const step = document.getElementById('step').value;
+            const model = document.getElementById('model').value;
             const outputEl = document.getElementById('output');
             const customContext = document.getElementById('custom-context').value;
             
@@ -220,7 +225,7 @@ ${htmlBody}
                 const res = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({theme: theme, step: step, article: articleText}),
+                    body: JSON.stringify({theme: theme, step: step, article: articleText, model: model}),
                     signal: abortController.signal
                 });
                 
