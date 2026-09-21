@@ -24,11 +24,7 @@
                     <option value="fact_check">3. ファクトチェック</option>
                 </select>
                 <select id="model" class="border p-2 rounded bg-white text-sm">
-                    <option value="orcarouter/free" selected>orcarouter/free (高速モデル)</option>
-                    <option value="orcarouter/auto">orcarouter/auto (高精度・推論モデル)</option>
-                    <option value="openai/gpt-4o">GPT-4o (超高精度・安定)</option>
-                    <option value="openai/gpt-4o-mini">GPT-4o-mini (高速・安定)</option>
-                    <option value="deepseek/deepseek-r1">DeepSeek-R1 (最強推論・激重)</option>
+                    <!-- JavaScriptで動的に生成されます -->
                 </select>
                 <button id="exec-btn" onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
                 <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">停止</button>
@@ -89,17 +85,60 @@
         let lastSuccessfulStep = "";
         let abortController = null;
 
+        const modelOptions = {
+            research: [
+                { value: 'orcarouter/free', label: 'orcarouter/free (高速モデル)' },
+                { value: 'orcarouter/auto', label: 'orcarouter/auto (高精度・推論モデル)' },
+                { value: 'openai/gpt-4o', label: 'GPT-4o (超高精度・安定)' },
+                { value: 'openai/gpt-4o-mini', label: 'GPT-4o-mini (高速・安定)' },
+                { value: 'anthropic/claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (最高峰)' },
+                { value: 'google/gemini-1.5-pro', label: 'Gemini 1.5 Pro (長文特化)' },
+                { value: 'deepseek/deepseek-r1', label: 'DeepSeek-R1 (最強推論・激重)' }
+            ],
+            writing: [
+                { value: 'orcarouter/auto', label: 'orcarouter/auto (高精度・推論モデル)' },
+                { value: 'orcarouter/free', label: 'orcarouter/free (高速モデル)' },
+                { value: 'openai/gpt-4o', label: 'GPT-4o (超高精度・安定)' },
+                { value: 'openai/gpt-4o-mini', label: 'GPT-4o-mini (高速・安定)' },
+                { value: 'anthropic/claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (最高峰)' },
+                { value: 'google/gemini-1.5-pro', label: 'Gemini 1.5 Pro (長文特化)' },
+                { value: 'deepseek/deepseek-r1', label: 'DeepSeek-R1 (最強推論・激重)' }
+            ],
+            fact_check: [
+                { value: 'openai/gpt-4o', label: 'GPT-4o (超高精度・安定)' },
+                { value: 'anthropic/claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (最高峰)' },
+                { value: 'google/gemini-1.5-pro', label: 'Gemini 1.5 Pro (長文特化)' },
+                { value: 'openai/gpt-4o-mini', label: 'GPT-4o-mini (高速・安定)' },
+                { value: 'deepseek/deepseek-r1', label: 'DeepSeek-R1 (最強推論・激重)' }
+            ]
+        };
+
         function updateDefaultModel() {
             const step = document.getElementById('step').value;
             const modelSelect = document.getElementById('model');
-            if (step === 'research') {
-                modelSelect.value = 'orcarouter/free';
-            } else if (step === 'writing') {
-                modelSelect.value = 'orcarouter/auto';
-            } else if (step === 'fact_check') {
-                modelSelect.value = 'openai/gpt-4o'; // ファクトチェックは安定のGPT-4oをデフォルトに
-            }
+            
+            // 現在の選択を保存
+            const currentSelection = modelSelect.value;
+            
+            // オプションをクリア
+            modelSelect.innerHTML = '';
+            
+            // 新しいオプションを追加
+            const options = modelOptions[step];
+            options.forEach(opt => {
+                const optionEl = document.createElement('option');
+                optionEl.value = opt.value;
+                optionEl.textContent = opt.label;
+                modelSelect.appendChild(optionEl);
+            });
+            
+            // デフォルトはリストの先頭（キーの並び順でトップにあるもの）が自動選択される
         }
+
+        // 初期ロード時にモデルリストを生成
+        window.addEventListener('DOMContentLoaded', () => {
+            updateDefaultModel();
+        });
 
         function copyToEditor() {
             const outputEl = document.getElementById('output');
