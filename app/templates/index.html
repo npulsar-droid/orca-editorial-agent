@@ -218,6 +218,9 @@ ${htmlBody}
             progressBarEl.style.width = '10%';
             progressTextEl.textContent = '10%';
             outputEl.textContent = '';
+            document.getElementById('model-name').textContent = '-';
+            document.getElementById('tokens').textContent = '-';
+            document.getElementById('cost').textContent = '¥0.00';
             
             document.getElementById('exec-btn').classList.add('hidden');
             document.getElementById('cancel-btn').classList.remove('hidden');
@@ -238,34 +241,50 @@ ${htmlBody}
                 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
                     
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split("\n");
-                    buffer = lines.pop();
-                    
-                    for (const line of lines) {
-                        if (!line.trim()) continue;
-                        const data = JSON.parse(line);
+                    if (value) {
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split("\n");
+                        buffer = lines.pop(); // 最後の不完全な行をバッファに残す
                         
-                        if (data.type === 'status') {
-                            statusEl.textContent = data.message;
-                            progressBarEl.style.width = data.progress + '%';
-                            progressTextEl.textContent = data.progress + '%';
-                        } else if (data.type === 'chunk') {
-                            outputEl.textContent += data.content;
-                            outputEl.scrollTop = outputEl.scrollHeight;
-                        } else if (data.type === 'done') {
-                            document.getElementById('model-name').textContent = data.actual_model;
-                            document.getElementById('tokens').textContent = data.tokens + ' (概算)';
-                            document.getElementById('cost').textContent = `¥${data.cost_estimate_jpy}`;
-                            // 成功時に状態を保存（次のステップへの自動引き継ぎ用）
-                            lastSuccessfulTheme = theme;
-                            lastSuccessfulStep = step;
-                        } else if (data.type === 'error') {
-                            statusEl.textContent = 'エラー発生';
-                            outputEl.textContent += '\n\nエラー: ' + data.message;
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
+                            const data = JSON.parse(line);
+                            processData(data);
                         }
+                    }
+                    
+                    if (done) {
+                        if (buffer.trim()) {
+                            try {
+                                const data = JSON.parse(buffer);
+                                processData(data);
+                            } catch(e) {}
+                        }
+                        break;
+                    }
+                }
+                
+                function processData(data) {
+                    if (data.type === 'status') {
+                        statusEl.textContent = data.message;
+                        progressBarEl.style.width = data.progress + '%';
+                        progressTextEl.textContent = data.progress + '%';
+                    } else if (data.type === 'chunk') {
+                        outputEl.textContent += data.content;
+                        outputEl.scrollTop = outputEl.scrollHeight;
+                    } else if (data.type === 'done') {
+                        document.getElementById('model-name').textContent = data.actual_model;
+                        document.getElementById('tokens').textContent = data.tokens + ' (概算)';
+                        document.getElementById('cost').textContent = `¥${data.cost_estimate_jpy}`;
+                        statusEl.textContent = '完了';
+                        progressBarEl.style.width = '100%';
+                        progressTextEl.textContent = '100%';
+                        lastSuccessfulTheme = theme;
+                        lastSuccessfulStep = step;
+                    } else if (data.type === 'error') {
+                        statusEl.textContent = 'エラー発生';
+                        outputEl.textContent += '\n\nエラー: ' + data.message;
                     }
                 }
             } catch (err) {

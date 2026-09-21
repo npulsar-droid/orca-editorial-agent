@@ -47,8 +47,8 @@ def perform_web_search(query: str):
         data = json.dumps({
             "api_key": TAVILY_API_KEY,
             "query": query,
-            "search_depth": "basic",
-            "max_results": 3
+            "search_depth": "advanced",
+            "max_results": 5
         }).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
         response = urllib.request.urlopen(req)
