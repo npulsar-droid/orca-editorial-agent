@@ -21,7 +21,8 @@
                     <option value="writing" selected>構成・執筆 (orcarouter/auto)</option>
                     <option value="fact_check">ファクトチェック (orcarouter/auto)</option>
                 </select>
-                <button onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
+                <button id="exec-btn" onclick="generate()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">実行</button>
+                <button id="cancel-btn" onclick="cancelGeneration()" class="hidden bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700">停止</button>
             </div>
             
             <div class="mt-4">
@@ -76,6 +77,14 @@
     <script>
         let lastSuccessfulTheme = "";
         let lastSuccessfulStep = "";
+        let abortController = null;
+
+        function cancelGeneration() {
+            if (abortController) {
+                abortController.abort();
+                abortController = null;
+            }
+        }
 
         function handleFileUpload(event) {
             const file = event.target.files[0];
@@ -202,11 +211,17 @@ ${htmlBody}
             progressTextEl.textContent = '10%';
             outputEl.textContent = '';
             
+            document.getElementById('exec-btn').classList.add('hidden');
+            document.getElementById('cancel-btn').classList.remove('hidden');
+            
+            abortController = new AbortController();
+            
             try {
                 const res = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({theme: theme, step: step, article: articleText})
+                    body: JSON.stringify({theme: theme, step: step, article: articleText}),
+                    signal: abortController.signal
                 });
                 
                 const reader = res.body.getReader();
@@ -246,8 +261,18 @@ ${htmlBody}
                     }
                 }
             } catch (err) {
-                statusEl.textContent = '通信エラー';
-                outputEl.textContent = '通信エラーが発生しました: ' + err;
+                if (err.name === 'AbortError') {
+                    statusEl.textContent = 'キャンセルされました';
+                    outputEl.textContent += '\n\n⚠️ ユーザーによって処理がキャンセルされました。';
+                    progressBarEl.style.width = '0%';
+                } else {
+                    statusEl.textContent = '通信エラー';
+                    outputEl.textContent = '通信エラーが発生しました: ' + err;
+                }
+            } finally {
+                document.getElementById('exec-btn').classList.remove('hidden');
+                document.getElementById('cancel-btn').classList.add('hidden');
+                abortController = null;
             }
         }
     </script>

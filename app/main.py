@@ -102,7 +102,8 @@ async def generate_step(req: GenerateRequest):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
-                stream=True
+                stream=True,
+                timeout=120.0  # 2分応答がなければタイムアウト
             )
             
             actual_model = model_name
