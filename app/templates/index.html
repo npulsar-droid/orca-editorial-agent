@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orca-Editorial Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
     <div class="max-w-4xl mx-auto py-10 px-4">
@@ -27,8 +28,8 @@
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-sm font-semibold text-gray-700">事前リサーチ結果 / 検証する記事本文（空欄の場合は自動取得します）</label>
                     <label class="cursor-pointer bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-200 border">
-                        📄 MDファイルを読み込む
-                        <input type="file" id="file-upload" accept=".md,.txt" class="hidden" onchange="handleFileUpload(event)">
+                        📄 ファイルを読み込む (MD/TXT/HTML)
+                        <input type="file" id="file-upload" accept=".md,.txt,.html" class="hidden" onchange="handleFileUpload(event)">
                     </label>
                 </div>
                 <textarea id="custom-context" rows="4" placeholder="ここに独自の調査メモや、外部で作成した記事を貼り付けると、AIがそれを元に執筆や検証を行います。" class="w-full border p-2 rounded text-sm"></textarea>
@@ -39,10 +40,16 @@
             <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-semibold">Agent 実行ログ & 結果</h3>
-                    <button onclick="downloadMD()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">💾 MDとして保存</button>
+                    <div class="flex items-center gap-2">
+                        <select id="download-format" class="border rounded px-2 py-1 text-sm bg-white">
+                            <option value="md">Markdown (.md)</option>
+                            <option value="txt">テキスト (.txt)</option>
+                            <option value="html">HTML (.html)</option>
+                        </select>
+                        <button onclick="downloadFile()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">💾 保存</button>
+                    </div>
                 </div>
                 
-                <!-- プログレスバーとステータス表示 -->
                 <div class="mb-4">
                     <div class="flex justify-between text-sm mb-1">
                         <span id="agent-status" class="font-semibold text-blue-600">待機中</span>
@@ -75,17 +82,16 @@
                 document.getElementById('custom-context').value = e.target.result;
             };
             reader.readAsText(file);
-            // 同じファイルを再度選べるようにリセット
             event.target.value = '';
         }
 
-        function downloadMD() {
+        function downloadFile() {
             const content = document.getElementById('output').textContent;
             if (!content || content.includes('スタンバイ...')) {
                 return alert('保存する結果がありません。');
             }
             
-            // 不要なプレフィックスを取り除く（例：🤖 執筆エージェントが... 等のシステムメッセージ）
+            // 不要なプレフィックスを取り除く
             let cleanContent = content;
             const marker = "---";
             if (content.includes(marker)) {
@@ -94,9 +100,43 @@
 
             const theme = document.getElementById('theme').value || 'article';
             const step = document.getElementById('step').value;
-            const filename = `${theme}_${step}.md`;
+            const format = document.getElementById('download-format').value;
+            const filename = `${theme}_${step}.${format}`;
 
-            const blob = new Blob([cleanContent], { type: 'text/markdown;charset=utf-8;' });
+            let finalContent = cleanContent;
+            let mimeType = 'text/plain;charset=utf-8;';
+
+            if (format === 'md') {
+                mimeType = 'text/markdown;charset=utf-8;';
+            } else if (format === 'html') {
+                mimeType = 'text/html;charset=utf-8;';
+                // MarkdownをHTMLに変換し、スタイル付きのHTMLテンプレートに埋め込む
+                const htmlBody = marked.parse(cleanContent);
+                finalContent = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${theme}</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #333; }
+  h1, h2, h3 { color: #111; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+  pre, code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+  pre { padding: 1rem; overflow-x: auto; }
+  pre code { background: transparent; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background-color: #f8f9fa; }
+  blockquote { border-left: 4px solid #ddd; margin: 0; padding-left: 1rem; color: #666; }
+</style>
+</head>
+<body>
+${htmlBody}
+</body>
+</html>`;
+            }
+
+            const blob = new Blob([finalContent], { type: mimeType });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
             link.setAttribute("href", url);
@@ -118,7 +158,6 @@
             let articleText = customContext;
             
             if (step === 'fact_check') {
-                // テキストエリアが空なら、出力結果(outputEl)から引き継ぐ
                 if (!articleText.trim()) {
                     let prevOutput = outputEl.textContent;
                     const marker = "---";
@@ -129,7 +168,7 @@
                 }
                 
                 if (!articleText || articleText.includes('スタンバイ...')) {
-                    return alert('検証する記事をテキストエリアに入力するか、MDファイルで読み込んでください。（または先に「構成・執筆」を実行してください）');
+                    return alert('検証する記事をテキストエリアに入力するか、ファイルで読み込んでください。（または先に「構成・執筆」を実行してください）');
                 }
             }
             
@@ -159,7 +198,7 @@
                     
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split("\n");
-                    buffer = lines.pop(); // 最後の不完全な行を保持
+                    buffer = lines.pop();
                     
                     for (const line of lines) {
                         if (!line.trim()) continue;
@@ -171,7 +210,7 @@
                             progressTextEl.textContent = data.progress + '%';
                         } else if (data.type === 'chunk') {
                             outputEl.textContent += data.content;
-                            outputEl.scrollTop = outputEl.scrollHeight; // 自動スクロール
+                            outputEl.scrollTop = outputEl.scrollHeight;
                         } else if (data.type === 'done') {
                             document.getElementById('model-name').textContent = data.actual_model;
                             document.getElementById('tokens').textContent = data.tokens + ' (概算)';
