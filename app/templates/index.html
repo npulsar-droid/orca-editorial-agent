@@ -6,6 +6,18 @@
     <title>Orca-Editorial Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+    </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
     <div class="max-w-4xl mx-auto py-10 px-4">
@@ -271,7 +283,7 @@
             statusEl.textContent = '初期化中...';
             progressBarEl.style.width = '10%';
             progressTextEl.textContent = '10%';
-            outputEl.textContent = '';
+            outputEl.innerHTML = '<span class="text-gray-400">Working<span class="loading-dots"></span></span>';
             document.getElementById('model-name').textContent = '-';
             document.getElementById('tokens').textContent = '-';
             document.getElementById('cost').textContent = '¥0.00';
@@ -292,6 +304,7 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder("utf-8");
                 let buffer = "";
+                let isFirstChunk = true;
                 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -311,9 +324,10 @@
                     if (done) {
                         if (buffer.trim()) {
                             try {
-                                const data = JSON.parse(buffer);
-                                processData(data);
-                            } catch(e) {}
+                                processData(JSON.parse(buffer));
+                            } catch (e) {
+                                console.error("Final parse error", e);
+                            }
                         }
                         break;
                     }
@@ -324,7 +338,14 @@
                         statusEl.textContent = data.message;
                         progressBarEl.style.width = data.progress + '%';
                         progressTextEl.textContent = data.progress + '%';
+                        if (isFirstChunk) {
+                            outputEl.innerHTML = `<span class="text-gray-400">${data.message}<span class="loading-dots"></span></span>`;
+                        }
                     } else if (data.type === 'chunk') {
+                        if (isFirstChunk) {
+                            outputEl.textContent = '';
+                            isFirstChunk = false;
+                        }
                         outputEl.textContent += data.content;
                         outputEl.scrollTop = outputEl.scrollHeight;
                     } else if (data.type === 'done') {
